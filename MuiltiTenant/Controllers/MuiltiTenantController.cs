@@ -27,7 +27,7 @@ namespace MuiltiTenant.Controllers
 
         [HttpGet]
         [Route("/test-muilti-tenant")]
-        public async Task<List<TokenEntity>> GetMuiltiTenant()
+        public async Task<List<Token>> GetMuiltiTenant()
         {
             var tokenEntities = await _dbcontext.Tokens.AsNoTracking().ToListAsync();
 

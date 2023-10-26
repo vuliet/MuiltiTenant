@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace MuiltiTenant.Models
 {
     [Index(nameof(Hash))]
-    public class TokenEntity
+    public class Token
     {
         [Key]
         public long Id { get; set; }

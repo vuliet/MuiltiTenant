@@ -7,6 +7,6 @@ namespace MuiltiTenant.DatabasaeContext
     {
         public TenantDbContext(DbContextOptions<TenantDbContext> options) : base(options) { }
 
-        public DbSet<TokenEntity> Tokens { get; set; }
+        public DbSet<Token> Tokens { get; set; }
     }
 }
