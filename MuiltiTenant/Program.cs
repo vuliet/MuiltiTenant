@@ -25,8 +25,6 @@ builder.Services.AddScoped<ITenantResolver, TenantResolver>();
 
 var app = builder.Build();
 
-MigrationDatabase.UseMigrationDatabase(app);
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -38,6 +36,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.UseMiddleware<TenantMiddleware>();
+
+MigrationDatabase.UseMigrationDatabase(app);
 
 app.MapControllers();
 
