@@ -1,4 +1,6 @@
-﻿namespace MuiltiTenant.Seed
+﻿using MuiltiTenant.DatabasaeContext;
+
+namespace MuiltiTenant.Seed
 {
     public partial class DataSeeder
     {

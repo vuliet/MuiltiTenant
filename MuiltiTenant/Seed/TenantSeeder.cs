@@ -1,4 +1,5 @@
-﻿using MuiltiTenant.Models;
+﻿using MuiltiTenant.DatabasaeContext;
+using MuiltiTenant.Models;
 
 namespace MuiltiTenant.Seed
 {

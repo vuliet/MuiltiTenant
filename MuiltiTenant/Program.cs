@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MuiltiTenant;
+using MuiltiTenant.DatabasaeContext;
 using MuiltiTenant.Middleware;
 using MuiltiTenant.Resolver;
 using MuiltiTenant.Seed;
@@ -16,7 +16,10 @@ var numberOfPool = 50;
 
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 29));
 builder.Services.AddDbContextPool<ApplicationDbContext>(
-    dbContextOptions => dbContextOptions.UseMySql(builder.Configuration["DbConnectionString"], serverVersion), numberOfPool);
+    dbContextOptions => dbContextOptions.UseMySql(
+        builder.Configuration["DbConnectionString"],
+        serverVersion),
+    numberOfPool);
 
 builder.Services.AddScoped<ITenantResolver, TenantResolver>();
 
@@ -24,7 +27,6 @@ var app = builder.Build();
 
 MigrationDatabase.UseMigrationDatabase(app);
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
