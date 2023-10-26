@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MuiltiTenant.DatabasaeContext;
 using MuiltiTenant.Resolver;
 using System.Net;
 
