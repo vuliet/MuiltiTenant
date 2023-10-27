@@ -17,7 +17,6 @@ namespace MuiltiTenant.Controllers
 
         public MuiltiTenantController(
             ILogger<MuiltiTenantController> logger,
-            IServiceProvider serviceProvider,
             IHttpContextAccessor contextAccessor)
         {
             _logger = logger;
