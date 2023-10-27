@@ -21,7 +21,9 @@ namespace MuiltiTenant.Controllers
         {
             _logger = logger;
             _contextAccessor = contextAccessor;
-            _dbcontext = _contextAccessor.HttpContext.Items["DbContext"] as TenantDbContext;
+
+            _dbcontext = _contextAccessor.HttpContext?.Items["DbContext"] as TenantDbContext
+                ?? throw new Exception("DbContext in HttpContext is null");
         }
 
         [HttpGet]
