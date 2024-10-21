@@ -1,4 +1,4 @@
-﻿using MuiltiTenant.DatabasaeContext;
+﻿using MuiltiTenant.DatabaseContext;
 using MuiltiTenant.Models;
 
 namespace MuiltiTenant.Resolver

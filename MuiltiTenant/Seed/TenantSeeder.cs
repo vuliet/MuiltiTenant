@@ -1,4 +1,4 @@
-﻿using MuiltiTenant.DatabasaeContext;
+﻿using MuiltiTenant.DatabaseContext;
 using MuiltiTenant.Models;
 
 namespace MuiltiTenant.Seed
@@ -15,13 +15,13 @@ namespace MuiltiTenant.Seed
                 {
                     Name = "ssprintl",
                     Domain = "localhost",
-                    ConnectionString ="server=localhost;Port=3306;user=root;password=password123;database=Sprint_Db;ConnectionTimeout=120;",
+                    ConnectionString ="server=localhost;Port=3308;user=root;password=password123;database=Sprint_Db;ConnectionTimeout=120;",
                 },
                 new Tenant()
                 {
                     Name = "infisquare",
                     Domain = "localhost2",
-                    ConnectionString ="server=localhost;Port=3306;user=root;password=password123;database=infisquaredb;ConnectionTimeout=120;",
+                    ConnectionString ="server=localhost;Port=3308;user=root;password=password123;database=infisquaredb;ConnectionTimeout=120;",
                 }
             };
 

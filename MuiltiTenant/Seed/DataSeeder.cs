@@ -1,11 +1,10 @@
-﻿using MuiltiTenant.DatabasaeContext;
+﻿using MuiltiTenant.DatabaseContext;
 
 namespace MuiltiTenant.Seed
 {
     public partial class DataSeeder
     {
         public static void Seed(
-            IServiceProvider serviceProvider,
             ApplicationDbContext context)
         {
             SeedTenants(context);

@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MuiltiTenant.DatabasaeContext;
+using MuiltiTenant.DatabaseContext;
 using MuiltiTenant.Resolver;
 using System.Net;
 
@@ -25,7 +25,7 @@ namespace MuiltiTenant.Middleware
             }
 
             var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
-            optionsBuilder.UseMySql(tenant.ConnectionString, new MySqlServerVersion(new Version(8, 0, 29)));
+            optionsBuilder.UseMySql(tenant.ConnectionString, new MySqlServerVersion(new Version(9, 0, 1)));
 
             using var dbContext = new TenantDbContext(optionsBuilder.Options);
 

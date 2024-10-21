@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MuiltiTenant.DatabasaeContext;
+using MuiltiTenant.DatabaseContext;
 using MuiltiTenant.Models;
 
 namespace MuiltiTenant.Controllers

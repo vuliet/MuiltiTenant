@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using MuiltiTenant.DatabasaeContext;
+using MuiltiTenant.DatabaseContext;
 
 #nullable disable
 

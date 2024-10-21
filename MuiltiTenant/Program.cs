@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MuiltiTenant.DatabasaeContext;
+using MuiltiTenant.DatabaseContext;
 using MuiltiTenant.Middleware;
 using MuiltiTenant.Resolver;
 using MuiltiTenant.Seed;

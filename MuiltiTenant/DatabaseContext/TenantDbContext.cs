@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MuiltiTenant.Models;
 
-namespace MuiltiTenant.DatabasaeContext
+namespace MuiltiTenant.DatabaseContext
 {
     public class TenantDbContext : DbContext
     {

@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MuiltiTenant.DatabasaeContext;
+using MuiltiTenant.DatabaseContext;
 
 namespace MuiltiTenant.Seed
 {
@@ -15,7 +15,7 @@ namespace MuiltiTenant.Seed
                 var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
                 context.Database.Migrate();
 
-                DataSeeder.Seed(serviceProvider, context);
+                DataSeeder.Seed(context);
             }
             catch (Exception ex)
             {
