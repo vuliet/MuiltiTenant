@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Main MySQL database for tenant metadata
+  mysql-main:
+    image: mysql:8.0.29
+    container_name: multitenant-mysql-main
+    environment:
+      MYSQL_ROOT_PASSWORD: password123
+      MYSQL_DATABASE: MultiTenantDb
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_main_data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - multitenant-network
+
+  # MySQL database for tenant 1 (ssprintl)
+  mysql-tenant1:
+    image: mysql:9.0.1
+    container_name: multitenant-mysql-tenant1
+    environment:
+      MYSQL_ROOT_PASSWORD: password123
+      MYSQL_DATABASE: Sprint_Db
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_tenant1_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - multitenant-network
+
+  # MySQL database for tenant 2 (infisquare)
+  mysql-tenant2:
+    image: mysql:9.0.1
+    container_name: multitenant-mysql-tenant2
+    environment:
+      MYSQL_ROOT_PASSWORD: password123
+      MYSQL_DATABASE: infisquaredb
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql_tenant2_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - multitenant-network
+
+  # Multi-tenant API application
+  multitenant-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: multitenant-api
+    ports:
+      - "5075:80"
+      - "7067:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=password
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - ConnectionStrings__DefaultConnection=server=mysql-main;Port=3306;user=root;password=password123;database=MultiTenantDb;ConnectionTimeout=120;
+    volumes:
+      - ~/.aspnet/https:/https:ro
+      - ./logs:/app/logs
+    depends_on:
+      - mysql-main
+      - mysql-tenant1
+      - mysql-tenant2
+    networks:
+      - multitenant-network
+
+  # Redis for caching (optional)
+  redis-cache:
+    image: redis:7-alpine
+    container_name: multitenant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - multitenant-network
+
+volumes:
+  mysql_main_data:
+  mysql_tenant1_data:
+  mysql_tenant2_data:
+  redis_data:
+
+networks:
+  multitenant-network:
+    driver: bridge
