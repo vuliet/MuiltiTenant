@@ -1,9 +1,10 @@
-﻿using MuiltiTenant.Models;
+using MuiltiTenant.Models;
 
 namespace MuiltiTenant.Resolver
 {
     public interface ITenantResolver
     {
-        Tenant Resolve(string host);
+        Task<Tenant?> ResolveAsync(string host);
+        Task InvalidateCacheAsync(string host);
     }
 }
