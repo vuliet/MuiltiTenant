@@ -1,0 +1,224 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using MuiltiTenant.DatabaseContext;
+using MuiltiTenant.Models;
+using MuiltiTenant.Resolver;
+
+namespace MuiltiTenant.Services
+{
+    public class TenantService : ITenantService
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IMemoryCache _cache;
+        private readonly ITenantResolver _tenantResolver;
+        private readonly ILogger<TenantService> _logger;
+
+        public TenantService(
+            ApplicationDbContext context,
+            IMemoryCache cache,
+            ITenantResolver tenantResolver,
+            ILogger<TenantService> logger)
+        {
+            _context = context;
+            _cache = cache;
+            _tenantResolver = tenantResolver;
+            _logger = logger;
+        }
+
+        public async Task<IEnumerable<Tenant>> GetAllTenantsAsync()
+        {
+            return await _context.Tenants.AsNoTracking().ToListAsync();
+        }
+
+        public async Task<Tenant?> GetTenantByIdAsync(int id)
+        {
+            return await _context.Tenants.FindAsync(id);
+        }
+
+        public async Task<Tenant?> GetTenantByDomainAsync(string domain)
+        {
+            return await _tenantResolver.ResolveAsync(domain);
+        }
+
+        public async Task<Tenant> CreateTenantAsync(Tenant tenant)
+        {
+            // Validate connection string before creating tenant
+            if (!await TestTenantConnectionAsync(tenant.ConnectionString))
+            {
+                throw new InvalidOperationException("Invalid connection string provided");
+            }
+
+            _context.Tenants.Add(tenant);
+            await _context.SaveChangesAsync();
+
+            // Invalidate cache
+            await _tenantResolver.InvalidateCacheAsync(tenant.Domain);
+
+            _logger.LogInformation("Tenant created: {TenantName} with domain: {Domain}", 
+                tenant.Name, tenant.Domain);
+
+            return tenant;
+        }
+
+        public async Task<bool> UpdateTenantAsync(Tenant tenant)
+        {
+            try
+            {
+                var existingTenant = await _context.Tenants.FindAsync(tenant.Id);
+                if (existingTenant == null)
+                    return false;
+
+                // Test new connection string if it changed
+                if (existingTenant.ConnectionString != tenant.ConnectionString)
+                {
+                    if (!await TestTenantConnectionAsync(tenant.ConnectionString))
+                    {
+                        throw new InvalidOperationException("Invalid connection string provided");
+                    }
+                }
+
+                var oldDomain = existingTenant.Domain;
+
+                existingTenant.Name = tenant.Name;
+                existingTenant.Domain = tenant.Domain;
+                existingTenant.ConnectionString = tenant.ConnectionString;
+
+                await _context.SaveChangesAsync();
+
+                // Invalidate cache for both old and new domains
+                await _tenantResolver.InvalidateCacheAsync(oldDomain);
+                await _tenantResolver.InvalidateCacheAsync(tenant.Domain);
+
+                _logger.LogInformation("Tenant updated: {TenantName}", tenant.Name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating tenant: {TenantId}", tenant.Id);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteTenantAsync(int id)
+        {
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(id);
+                if (tenant == null)
+                    return false;
+
+                var domain = tenant.Domain;
+                _context.Tenants.Remove(tenant);
+                await _context.SaveChangesAsync();
+
+                // Invalidate cache
+                await _tenantResolver.InvalidateCacheAsync(domain);
+
+                _logger.LogInformation("Tenant deleted: {TenantName}", tenant.Name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting tenant: {TenantId}", id);
+                return false;
+            }
+        }
+
+        public async Task<bool> TestTenantConnectionAsync(string connectionString)
+        {
+            try
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
+                optionsBuilder.UseMySql(connectionString, new MySqlServerVersion(new Version(9, 0, 1)));
+
+                using var context = new TenantDbContext(optionsBuilder.Options);
+                return await context.Database.CanConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Connection test failed for connection string");
+                return false;
+            }
+        }
+    }
+}
+
+// HealthChecks/TenantHealthCheck.cs
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MuiltiTenant.Services;
+
+namespace MuiltiTenant.Services
+{
+    public class TenantHealthCheck : IHealthCheck
+    {
+        private readonly ITenantService _tenantService;
+        private readonly ILogger<TenantHealthCheck> _logger;
+
+        public TenantHealthCheck(ITenantService tenantService, ILogger<TenantHealthCheck> logger)
+        {
+            _tenantService = tenantService;
+            _logger = logger;
+        }
+
+        public async Task<HealthCheckResult> CheckHealthAsync(
+            HealthCheckContext context, 
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var tenants = await _tenantService.GetAllTenantsAsync();
+                var tenantList = tenants.ToList();
+
+                if (!tenantList.Any())
+                {
+                    return HealthCheckResult.Degraded("No tenants configured");
+                }
+
+                var healthyTenants = 0;
+                var totalTenants = tenantList.Count;
+
+                foreach (var tenant in tenantList)
+                {
+                    try
+                    {
+                        if (await _tenantService.TestTenantConnectionAsync(tenant.ConnectionString))
+                        {
+                            healthyTenants++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Health check failed for tenant: {TenantName}", tenant.Name);
+                    }
+                }
+
+                var healthPercentage = (double)healthyTenants / totalTenants;
+
+                var data = new Dictionary<string, object>
+                {
+                    ["total_tenants"] = totalTenants,
+                    ["healthy_tenants"] = healthyTenants,
+                    ["health_percentage"] = $"{healthPercentage:P}"
+                };
+
+                if (healthPercentage >= 1.0)
+                {
+                    return HealthCheckResult.Healthy($"All {totalTenants} tenants are healthy", data);
+                }
+                else if (healthPercentage >= 0.5)
+                {
+                    return HealthCheckResult.Degraded($"{healthyTenants}/{totalTenants} tenants are healthy", data);
+                }
+                else
+                {
+                    return HealthCheckResult.Unhealthy($"Only {healthyTenants}/{totalTenants} tenants are healthy", data);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during tenant health check");
+                return HealthCheckResult.Unhealthy("Failed to perform tenant health check", ex);
+            }
+        }
+    }
+}
